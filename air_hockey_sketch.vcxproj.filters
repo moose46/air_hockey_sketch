@@ -19,7 +19,7 @@
     <None Include="src\arduino folders read me.txt">
       <Filter>Misc Files</Filter>
     </None>
-    <None Include="..\Air Hockey\seven_seg_counter\seven_seg_counter.ino" />
+    <None Include="helper_file.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.air_hockey_sketch.vsarduino.h">

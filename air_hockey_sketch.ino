@@ -22,108 +22,100 @@ l
 //#include <elapsedMillis.h>
 #include <PrintEx.h> //allows printf-style printout syntax
 // constants won't change. They're used here to set pin numbers:
-const int buttonReset = A0;    // the number of the pushbutton pin
-const int buttonPlayer1 = A1;    // the number of the pushbutton pin
-const int buttonPlayer2 = A2;    // the number of the pushbutton pin
+const int ResetBtnPinNumber = 18;    // the number of the pushbutton pin
+const int Player1BtnPinNumber = 19;    // the number of the pushbutton pin
+const int Player2BtnPinNumber = 20;
+// the number of the pushbutton pin
 // Variables will change:
 int ledState = HIGH;         // the current state of the output pin
-int buttonState;             // the current reading from the input pin
-int lastButtonState = LOW;   // the previous reading from the input pin
+//int buttonState;             // the current reading from the input pin
+int ResetBtnPreviousPinState = LOW;   // the previous reading from the input pin
+int Player1BtnPreviousPinState = LOW;   // the previous reading from the input pin
+int Player2BtnPreviousPinState = LOW;   // the previous reading from the input pin
 // milliseconds, will quickly become a bigger number than can be stored in an int.
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+unsigned long debounceDelay = 100;    // the debounce time; increase if the output flickers
 int scoreBoard = 0;
 
 SevSeg sevseg; //Instantiate a seven segment controller object
 
 volatile bool Interrupt = false;     // indicates whether MPU interrupt pin has gone high
-void BtnInterrupt()
-{
-    Interrupt = true;
-    scoreBoard += 100;
-}
 
 void setup() {
-    byte numDigits = 4;
-    //byte digitPins[] = {10, 11, 12, 13};
-    byte digitPins[] = { 13, 12, 11, 10 };
-    byte segmentPins[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
+	byte numDigits = 4;
+	//byte digitPins[] = {10, 11, 12, 13};
+	byte digitPins[] = { 13, 12, 11, 10 };
+	byte segmentPins[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
 
-    pinMode(buttonReset, INPUT);
-    pinMode(buttonPlayer1, INPUT);
-    pinMode(buttonPlayer2, INPUT);
-    buttonState = digitalRead(buttonReset);
+	pinMode(ResetBtnPinNumber, INPUT);
+	pinMode(Player1BtnPinNumber, INPUT);
+	pinMode(Player2BtnPinNumber, INPUT);
+	//buttonState = digitalRead(ResetBtnPinNumber);
 
-    Serial.println("Initial button state is ");
-    attachInterrupt(digitalPinToInterrupt(buttonReset), BtnInterrupt, CHANGE);
+	Serial.println("Initial button state is ");
+	//attachInterrupt(digitalPinToInterrupt(ResetBtnPinNumber), ResetBtnInterrupt, CHANGE);
 
 
-    sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins);
-    // If your display is common anode type, please edit comment above line and uncomment below line
-    // sevseg.begin(COMMON_ANODE, numDigits, digitPins, segmentPins);
-    sevseg.setBrightness(90);
+	sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins);
+	// If your display is common anode type, please edit comment above line and uncomment below line
+	// sevseg.begin(COMMON_ANODE, numDigits, digitPins, segmentPins);
+	sevseg.setBrightness(90);
 }
 
 void loop() {
-    static unsigned long timer = millis();
-    static int deciSeconds = 0;
+	static unsigned long timer = millis();
+	static int deciSeconds = 0;
 
-    ////////////////////////////////////////
+	////////////////////////////////////////
 
-    // read the state of the switch into a local variable:
-    int reading = digitalRead(buttonReset);
+	// read the state of the switch into a local variable:
+	int ResetBtnPinState = digitalRead(ResetBtnPinNumber);
+	int Player1BtnPinState = digitalRead(Player1BtnPinNumber);
+	int Player2BtnPinState = digitalRead(Player2BtnPinNumber);
 
-    // check to see if you just pressed the button
-    // (i.e. the input went from LOW to HIGH), and you've waited long enough
-    // since the last press to ignore any noise:
+	// check to see if you just pressed the button
+	// (i.e. the input went from LOW to HIGH), and you've waited long enough
+	// since the last press to ignore any noise:
 
-    // If the switch changed, due to noise or pressing:
-    if (reading != lastButtonState) {
-        // reset the debouncing timer
-        lastDebounceTime = millis();
-        Serial.println('Pressed');
-    }
+	// If the switch changed, due to noise or pressing:
+	if (ResetBtnPinState != ResetBtnPreviousPinState || Player1BtnPinState != Player1BtnPreviousPinState || Player2BtnPinState != Player2BtnPreviousPinState) {
+		// reset the debouncing timer
+		lastDebounceTime = millis();
+		Serial.println('Pressed');
+	}
 
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-        // whatever the reading is at, it's been there for longer than the debounce
-        // delay, so take it as the actual current state:
+	if ((millis() - lastDebounceTime) > debounceDelay) {
+		// whatever the reading is at, it's been there for longer than the debounce
+		// delay, so take it as the actual current state:
 
-        // if the button state has changed:
-        if (reading != buttonState) {
-            buttonState = reading;
+		processResetBtnState(ResetBtnPinState);
+		processPlayer1BtnState(Player1BtnPinState);
+		processPlayer2BtnState(Player2BtnPinState);
+	}
+	// save the reading. Next time through the loop, it'll be the lastButtonState:
+	ResetBtnPreviousPinState = ResetBtnPinState;
+	Player1BtnPreviousPinState = Player1BtnPinState;
+	Player2BtnPreviousPinState = Player2BtnPinState;
 
-            // only toggle the LED if the new button state is HIGH
-            if (buttonState == HIGH) {
-                ledState = !ledState;
-                //scoreBoard += 100;
-                scoreBoard += 1;
-                if (scoreBoard > 1600)
-                    scoreBoard = 0;
-                sevseg.setNumber(scoreBoard, 2);
-            }
-        }
-    }
 
-    // save the reading. Next time through the loop, it'll be the lastButtonState:
-    lastButtonState = reading;
-
-    ///////////////////////////////////////
+	///////////////////////////////////////
 
 
 
-    //
-    if (millis() >= timer) {
-        deciSeconds++; // 1000 milliSeconds is equal to 10 deciSecond
-        timer += 1000;
-        if (deciSeconds == 10000) { // Reset to 0 after counting for 1000 seconds.
-            deciSeconds = 0;
-        }
-        //    sevseg.setNumber(deciSeconds, 1);
-        sevseg.setNumber(scoreBoard, 2);
-    }
-    //
-    //  sevseg.refreshDisplay(); // Must run repeatedly
-    sevseg.refreshDisplay(); // Must run repeatedly
+	//
+	if (millis() >= timer) {
+		deciSeconds++; // 1000 milliSeconds is equal to 10 deciSecond
+		timer += 1000;
+		if (deciSeconds == 10000) { // Reset to 0 after counting for 1000 seconds.
+			deciSeconds = 0;
+		}
+		//    sevseg.setNumber(deciSeconds, 1);
+		sevseg.setNumber(scoreBoard, 2);
+	}
+	//
+	//  sevseg.refreshDisplay(); // Must run repeatedly
+	sevseg.refreshDisplay(); // Must run repeatedly
 }
+
 
 /// END ///
