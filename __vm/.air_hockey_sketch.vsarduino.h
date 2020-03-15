@@ -86,5 +86,6 @@ typedef void *__builtin_va_list;
 #define pgm_read_ptr(address_short)   short()
 
 #include "air_hockey_sketch.ino"
+#include "..\Air Hockey\seven_seg_counter\seven_seg_counter.ino"
 #endif
 #endif
